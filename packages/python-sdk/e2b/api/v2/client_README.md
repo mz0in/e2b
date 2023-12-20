@@ -20,7 +20,6 @@ To be able to use it, you will need these dependencies in your own package that 
 * urllib3 >= 1.25.3
 * python-dateutil
 * pydantic
-* aenum
 
 ## Getting Started
 
@@ -57,9 +56,10 @@ with e2b.api.v2.client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = e2b.api.v2.client.InstancesApi(api_client)
     instance_id = 'instance_id_example' # str | 
+    instances_instance_id_refreshes_post_request = e2b.api.v2.client.InstancesInstanceIDRefreshesPostRequest() # InstancesInstanceIDRefreshesPostRequest |  (optional)
 
     try:
-        api_instance.instances_instance_id_refreshes_post(instance_id)
+        api_instance.instances_instance_id_refreshes_post(instance_id, instances_instance_id_refreshes_post_request=instances_instance_id_refreshes_post_request)
     except ApiException as e:
         print("Exception when calling InstancesApi->instances_instance_id_refreshes_post: %s\n" % e)
 
@@ -82,6 +82,7 @@ Class | Method | HTTP request | Description
  - [EnvsEnvIDBuildsBuildIDLogsPostRequest](e2b/api/v2/client/docs/EnvsEnvIDBuildsBuildIDLogsPostRequest.md)
  - [Error](e2b/api/v2/client/docs/Error.md)
  - [Instance](e2b/api/v2/client/docs/Instance.md)
+ - [InstancesInstanceIDRefreshesPostRequest](e2b/api/v2/client/docs/InstancesInstanceIDRefreshesPostRequest.md)
  - [NewInstance](e2b/api/v2/client/docs/NewInstance.md)
 
 

@@ -1,4 +1,5 @@
 import {
+  Boxes,
   ChevronRightSquare,
   Cpu,
   DollarSign,
@@ -15,9 +16,11 @@ import {
   Timer,
   Variable,
   PencilRuler,
-  File,
-  Image as ImageIcon,
+  File, TerminalSquare, RefreshCw, PlaySquare,
 } from 'lucide-react'
+
+import logoOpenAI from '@/images/logos/openai.svg'
+import Image from 'next/image'
 
 export const routes = [
   {
@@ -86,8 +89,40 @@ export const routes = [
             size={20}
           />
         ),
-        title: 'Guide: Run LLM-generated code',
+        title: 'Guide: Custom Code Interpreter',
         href: '/guide/simple-gpt4-code-interpreter',
+        //
+        // title: 'Hello World: Simple AI Junior Developer',
+        // href: '/guide/simple-ai-junior-developer',
+      },
+      // {
+      //   icon: (
+      //     <Hammer
+      //       strokeWidth={1}
+      //       size={20}
+      //     />
+      //   ),
+      //   title: 'Guide: Run LLM-generated code',
+      //   href: '/guide/simple-gpt4-code-interpreter',
+      //   //
+      //   // title: 'Hello World: Simple AI Junior Developer',
+      //   // href: '/guide/simple-ai-junior-developer',
+      // },
+    ],
+  },
+  {
+    title: 'LLM Platforms',
+    links: [
+      {
+        icon: (
+          <Image
+            src={logoOpenAI}
+            alt="OpenAI logo"
+            className="h-4 w-4"
+          />
+        ),
+        title: 'OpenAI',
+        href: '/llm-platforms/openai',
       },
     ],
   },
@@ -139,6 +174,26 @@ export const routes = [
       },
       {
         icon: (
+          <PlaySquare
+            strokeWidth={1}
+            size={20}
+          />
+        ),
+        title: 'Start Command',
+        href: '/sandbox/templates/start-cmd',
+      },
+      {
+        icon: (
+          <Boxes
+            strokeWidth={1}
+            size={20}
+          />
+        ),
+        title: 'Premade Sandboxes',
+        href: '/sandbox/templates/premade',
+      },
+      {
+        icon: (
           <Hammer
             strokeWidth={1}
             size={20}
@@ -146,16 +201,6 @@ export const routes = [
         ),
         title: 'Guide: Creating Custom Sandbox',
         href: '/guide/custom-sandbox',
-      },
-      {
-        icon: (
-          <ImageIcon
-            strokeWidth={1}
-            size={20}
-          />
-        ),
-        title: 'Premade Sandboxes',
-        href: '/sandbox/templates/premade',
       },
     ]
   },
@@ -242,15 +287,41 @@ export const routes = [
         title: 'Timeouts',
         href: '/sandbox/api/timeouts',
       },
+      {
+        icon: (
+          <RefreshCw
+            strokeWidth={1}
+            size={20}
+          />
+        ),
+        title: 'Connect to running sandbox',
+        href: '/sandbox/api/reconnect',
+      },
     ],
   },
-  // {
-  //   title: 'E2B CLI',
-  //   links: [
-  //     {
-  //       title: 'Overview',
-  //       href: '/cli/overview',
-  //     },
-  //   ],
-  // },
+  {
+    title: 'CLI API',
+    links: [
+      {
+        icon: (
+          <Settings
+            strokeWidth={1}
+            size={20}
+          />
+        ),
+        title: 'Installation',
+        href: '/cli/installation',
+      },
+      {
+        icon: (
+          <TerminalSquare
+            strokeWidth={1}
+            size={20}
+          />
+        ),
+        title: 'Commands',
+        href: '/cli/commands',
+      },
+    ],
+  },
 ]

@@ -1,5 +1,6 @@
 import { EnvVars } from './envVars'
 import { CallOpts, SandboxConnection } from './sandboxConnection'
+import { withTimeout } from '../utils/promise'
 
 export const processService = 'process'
 
@@ -119,7 +120,7 @@ export class Process {
    */
   async kill(): Promise<void> {
     try {
-      await this.sandbox.call(processService, 'kill', [this.processID])
+      await this.sandbox._call(processService, 'kill', [this.processID])
     } finally {
       this.triggerExit()
       await this.finished
@@ -128,9 +129,11 @@ export class Process {
 
   /**
    * Waits for the process to finish.
+   *
+   * @param timeout Timeout for the process to finish in milliseconds
    */
-  async wait(): Promise<ProcessOutput> {
-    return this.finished
+  async wait(timeout?: number): Promise<ProcessOutput> {
+    return await withTimeout(() => this.finished, timeout)()
   }
 
   /**
@@ -138,10 +141,10 @@ export class Process {
    *
    * @param data Data to send
    * @param opts Call options
-   * @param {timeout} [opts.timeout] Timeout in milliseconds (default is 60 seconds)
+   * @param {timeout} [opts.timeout] Timeout for call in milliseconds (default is 60 seconds)
    */
   async sendStdin(data: string, opts?: CallOpts): Promise<void> {
-    await this.sandbox.call(
+    await this.sandbox._call(
       processService,
       'stdin',
       [this.processID, data],
@@ -154,15 +157,42 @@ export interface ProcessOpts {
   cmd: string;
   onStdout?: (out: ProcessMessage) => Promise<void> | void;
   onStderr?: (out: ProcessMessage) => Promise<void> | void;
-  onExit?: (code: number) => Promise<void> | void;
+  onExit?: (() => Promise<void> | void) | ((exitCode: number) => Promise<void> | void);
   envVars?: EnvVars;
   cwd?: string;
-  /** @deprecated use cwd instead */
+  /** @deprecated Use cwd instead */
   rootDir?: string;
   processID?: string;
+  /** Timeout for the process to start in milliseconds */
   timeout?: number;
 }
 
+/**
+ * Manager for starting and interacting with processes in the sandbox.
+ */
 export interface ProcessManager {
-  readonly start: (opts: ProcessOpts) => Promise<Process>;
+  /**
+   * Starts a new process.
+   * @param cmd Command to execute
+   * @returns New process
+   */
+  start(cmd: string): Promise<Process>;
+  /**
+   * Starts a new process.
+   * @param opts Process options
+   * @returns New process
+   */
+  start(opts: ProcessOpts): Promise<Process>;
+  /**
+   * Starts a new process and wait until it finishes.
+   * @param cmd Command to execute
+   * @returns New process
+   */
+  startAndWait(cmd: string): Promise<ProcessOutput>;
+  /**
+   * Starts a new process and wait until it finishes.
+   * @param opts Process options
+   * @returns New process
+   */
+  startAndWait(opts: ProcessOpts): Promise<ProcessOutput>;
 }

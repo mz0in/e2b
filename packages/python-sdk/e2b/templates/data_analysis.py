@@ -27,10 +27,11 @@ class Artifact(BaseModel):
 
 
 class DataAnalysis(Sandbox):
-    env_id = "Python3-DataAnalysis"
+    template = "Python3-DataAnalysis"
 
     def __init__(
         self,
+        template: Optional[str] = None,
         api_key: Optional[str] = None,
         cwd: Optional[str] = None,
         env_vars: Optional[EnvVars] = None,
@@ -39,10 +40,11 @@ class DataAnalysis(Sandbox):
         on_stderr: Optional[Callable[[ProcessMessage], Any]] = None,
         on_artifact: Optional[Callable[[Artifact], Any]] = None,
         on_exit: Optional[Callable[[int], Any]] = None,
+        **kwargs,
     ):
         self.on_artifact = on_artifact
         super().__init__(
-            id=self.env_id,
+            template=template or self.template,
             api_key=api_key,
             cwd=cwd,
             env_vars=env_vars,
@@ -50,6 +52,7 @@ class DataAnalysis(Sandbox):
             on_stdout=on_stdout,
             on_stderr=on_stderr,
             on_exit=on_exit,
+            **kwargs,
         )
 
     def run_python(
@@ -85,7 +88,7 @@ class DataAnalysis(Sandbox):
         codefile_path = f"/tmp/main-{epoch_time}.py"
         self.filesystem.write(codefile_path, code)
 
-        process = self.process.start(
+        output = self.process.start_and_wait(
             f"python {codefile_path}",
             on_stdout=on_stdout,
             on_stderr=on_stderr,
@@ -95,13 +98,17 @@ class DataAnalysis(Sandbox):
             process_id=process_id,
             timeout=timeout,
         )
-        process.wait()
 
         watcher.stop()
 
-        return process.output.stdout, process.output.stderr, list(artifacts)
+        return output.stdout, output.stderr, list(artifacts)
 
-    def _install_packages(self, command: str, package_names: Union[str, List[str]], timeout: Optional[float] = TIMEOUT) -> None:
+    def _install_packages(
+        self,
+        command: str,
+        package_names: Union[str, List[str]],
+        timeout: Optional[float] = TIMEOUT,
+    ) -> None:
         if isinstance(package_names, list):
             package_names = " ".join(package_names)
 
@@ -109,13 +116,15 @@ class DataAnalysis(Sandbox):
         if not package_names:
             return
 
-        process = self.process.start(f"{command} {package_names}", timeout=timeout)
-        process.wait()
+        output = self.process.start_and_wait(
+            f"{command} {package_names}", timeout=timeout
+        )
 
-        if process.exit_code != 0:
+        if output.exit_code != 0:
             raise Exception(
-                f"Failed to install package {package_names}: {process.output.stderr}"
+                f"Failed to install package {package_names}: {output.stderr}"
             )
+
     def install_python_packages(
         self, package_names: Union[str, List[str]], timeout: Optional[float] = TIMEOUT
     ) -> None:
@@ -124,4 +133,9 @@ class DataAnalysis(Sandbox):
     def install_system_packages(
         self, package_names: Union[str, List[str]], timeout: Optional[float] = TIMEOUT
     ) -> None:
-        self._install_packages("sudo apt-get install -y", package_names, timeout=timeout)
+        self._install_packages(
+            "sudo apt-get install -y", package_names, timeout=timeout
+        )
+
+
+CodeInterpreter = DataAnalysis

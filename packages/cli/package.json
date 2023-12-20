@@ -1,6 +1,6 @@
 {
   "name": "@e2b/cli",
-  "version": "0.1.0",
+  "version": "0.1.20",
   "description": "CLI for managing e2b sandbox templates",
   "homepage": "https://e2b.dev",
   "license": "MIT",
@@ -12,22 +12,23 @@
   "bugs": "https://github.com/e2b-dev/e2b/issues",
   "repository": {
     "type": "git",
-    "url": "https://github.com/e2b-dev/e2b/tree/main/packages/cli"
+    "url": "https://github.com/e2b-dev/e2b",
+    "directory": "packages/cli"
   },
   "publishConfig": {
     "access": "public"
   },
   "sideEffects": false,
   "scripts": {
-    "prepublishOnly": "pnpm run build",
-    "build": "tsup --minify",
+    "prepublishOnly": "pnpm build",
+    "build": "tsc --noEmit --skipLibCheck && tsup --minify",
     "dev": "tsup --watch",
     "test": "pnpm build && cd testground/demo-basic && ../../dist/index.js template build",
     "check-deps": "knip",
     "update-deps": "ncu -u && pnpm i"
   },
   "devDependencies": {
-    "@types/common-tags": "^1.8.2",
+    "@types/inquirer": "^9.0.7",
     "@types/node": "^18.18.6",
     "@types/tar-fs": "^2.0.3",
     "@types/update-notifier": "6.0.5",
@@ -48,16 +49,19 @@
   },
   "dependencies": {
     "@balena/dockerignore": "^1.0.2",
-    "@e2b/sdk": "^0.8.1",
+    "@e2b/sdk": "^0.11.9",
     "@iarna/toml": "^2.2.5",
     "@nodelib/fs.walk": "^2.0.0",
     "async-listen": "^3.0.1",
     "boxen": "^7.1.1",
     "chalk": "^5.3.0",
+    "cli-highlight": "^2.1.11",
     "commander": "^11.1.0",
-    "common-tags": "^1.8.2",
+    "console-table-printer": "^2.11.2",
     "ignore": "^5.2.4",
+    "inquirer": "^9.2.12",
     "open": "^9.1.0",
+    "strip-ansi": "^7.1.0",
     "tar-fs": "^3.0.4",
     "update-notifier": "5.1.0",
     "yup": "^1.3.2"

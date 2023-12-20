@@ -1,7 +1,9 @@
 from importlib.metadata import version
+from typing import Union
 
 from e2b.constants import API_HOST
 from e2b.api.metadata import default_headers
+
 
 pydantic_version = version("pydantic")
 if pydantic_version < "2.0.0":
@@ -24,8 +26,8 @@ configuration = client.Configuration(
 class E2BApiClient(client.ApiClient):
     def __init__(
         self,
-        api_key: str | None = None,
-        access_token: str | None = None,
+        api_key: Union[str, None] = None,
+        access_token: Union[str, None] = None,
         *args,
         **kwargs,
     ):
@@ -36,4 +38,4 @@ class E2BApiClient(client.ApiClient):
         self.default_headers = default_headers
 
 
-__all__ = ["configuration", "client", "models"]
+__all__ = ["E2BApiClient", "configuration", "client", "models"]

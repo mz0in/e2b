@@ -1,50 +1,64 @@
-import { DownloadFileFormat, Sandbox, SandboxOpts } from '../sandbox'
+import { Sandbox, SandboxOpts } from '../sandbox'
 import type { ProcessOpts } from '../sandbox/process'
 import { FilesystemEvent, FilesystemOperation } from '../sandbox/filesystemWatcher'
 
-export class Artifact {
+export class Artifact<S extends DataAnalysis> {
   readonly path: string
-  readonly _sandbox: Sandbox
+  readonly _sandbox: S
 
-  constructor(path: string, sandbox: Sandbox) {
+  constructor(path: string, sandbox: S) {
     this.path = path
     this._sandbox = sandbox
   }
-
-  async download(format?: DownloadFileFormat) {
-    return this._sandbox.downloadFile(this.path, format)
-  }
 }
 
-export interface RunPythonOpts extends Omit<ProcessOpts, 'cmd'> {
-  onArtifact?: (artifact: Artifact) => Promise<void> | void;
+export interface RunPythonOpts<S extends DataAnalysis> extends Omit<ProcessOpts, 'cmd'> {
+  onArtifact?: (artifact: Artifact<S>) => Promise<void> | void;
 }
-
-const DataAnalysisEnvId = 'Python3-DataAnalysis'
 
 export class DataAnalysis extends Sandbox {
-  constructor(opts: Omit<SandboxOpts, 'id'>) {
-    super({ id: DataAnalysisEnvId, ...opts })
+  private static template = 'Python3-DataAnalysis'
+
+  /**
+   * Use `DataAnalysis.create()` instead.
+   * 
+   * @hidden
+   * @hide
+   * @internal
+   * @access protected
+   */
+  constructor(opts: SandboxOpts) {
+    super({ template: opts.template || DataAnalysis.template, ...opts })
   }
 
-  static override async create(opts?: Omit<SandboxOpts, 'id'>) {
-    return new DataAnalysis({ ...opts })
-      ._open({ timeout: opts?.timeout })
-      .then(async (sandbox) => {
-        if (opts?.cwd) {
-          console.log(`Custom cwd for Sandbox set: "${opts.cwd}"`)
-          await sandbox.filesystem.makeDir(opts.cwd)
-        }
-        return sandbox
-      })
+  /**
+   * Creates a new Sandbox from the template.
+   * @returns New Sandbox
+   */
+  static override async create(): Promise<DataAnalysis>;
+  /**
+   * Creates a new Sandbox from the specified options.
+   * @param opts Sandbox options
+   * @returns New Sandbox
+   */
+  static override async create(opts: SandboxOpts): Promise<DataAnalysis>;
+  static override async create(opts?: SandboxOpts) {
+    const sandbox = new DataAnalysis({ ...opts ? opts : {} })
+    await sandbox._open({ timeout: opts?.timeout })
+
+    return sandbox
   }
 
-  async runPython(code: string, opts: RunPythonOpts = {}) {
+  async runPython(code: string, opts: RunPythonOpts<this> = {}): Promise<{
+    stdout: string;
+    stderr: string;
+    artifacts: Artifact<DataAnalysis>[];
+  }> {
     const artifacts: string[] = []
 
     const registerArtifacts = async (event: FilesystemEvent) => {
       if (event.operation === FilesystemOperation.Create) {
-        const artifact = new Artifact(event.path, this)
+        const artifact = new Artifact<this>(event.path, this)
         artifacts.push(event.path)
         await opts.onArtifact?.(artifact)
       }
@@ -57,18 +71,17 @@ export class DataAnalysis extends Sandbox {
     const currentEpoch = new Date().getTime()
     const codefilePath = `/tmp/main-${currentEpoch}.py`
     await this.filesystem.write(codefilePath, code)
-    const proc = await this.process.start({
+    const output = await this.process.startAndWait({
       cmd: `python ${codefilePath}`,
       ...opts,
     })
-    await proc.wait()
 
     await watcher.stop()
 
     return {
-      stdout: proc.output.stdout,
-      stderr: proc.output.stderr,
-      artifacts: artifacts.map((artifact) => new Artifact(artifact, this)),
+      stdout: output.stdout,
+      stderr: output.stderr,
+      artifacts: artifacts.map((artifact) => new Artifact<this>(artifact, this)),
     }
   }
 
@@ -90,13 +103,10 @@ export class DataAnalysis extends Sandbox {
       return
     }
 
-    const proc = await this.process.start({
-      cmd: `${command} ${packageNames}`,
-    })
-    await proc.wait()
+    const out = await this.process.startAndWait(`${command} ${packageNames}`)
 
-    if (proc.output.exitCode !== 0) {
-      throw new Error(`Failed to install package ${packageNames}: ${proc.output.stderr}`)
+    if (out.exitCode !== 0) {
+      throw new Error(`Failed to install package ${packageNames}: ${out.stderr}`)
     }
   }
 }

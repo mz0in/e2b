@@ -1,25 +1,6 @@
 <h1 align="center">
-<span style="font-size:48px;"><b>E2B CLI</b></span>
+  E2B CLI
 </h1>
-
-<h4 align="center">
-  <a href="https://e2b.dev/docs">Docs</a> |
-  <a href="https://e2b.dev">Website</a> |
-  <a href="https://discord.gg/U7KEcGErtQ">Discord</a> |
-  <a href="https://twitter.com/e2b_dev">Twitter</a>
-</h4>
-
-<h4 align="center">
-  <a href="https://discord.gg/U7KEcGErtQ">
-    <img src="https://img.shields.io/badge/chat-on%20Discord-blue" alt="Discord community server" />
-  </a>
-  <a href="https://twitter.com/e2b_dev">
-    <img src="https://img.shields.io/twitter/follow/infisical?label=Follow" alt="e2b Twitter" />
-  </a>
-</h4>
-
-[E2B](https://e2b.dev) (_english2bits_) is a cloud operating system for AI
-agents.
 
 This CLI tool allows you to build and manage E2B sandbox templates from your
 terminal.
@@ -76,34 +57,36 @@ FROM ubuntu:22.04
 All commands can be called with a `--path <path-to-dir>` flag that changes the
 directory where the command will be called, without the need to call `cd`.
 
-```sh
+```md
 -V, --version    Display E2B CLI version
 -h, --help       display help for command
 ```
 
-```sh
+```md
 Usage: e2b template [options] [command]
 
-Create sandbox templates from Dockerfiles by running e2b build then use our SDKs to create
-sandboxes from these templates.
+Create sandbox templates from Dockerfiles by running e2b build then use our SDKs to create sandboxes from these templates.
 
-Visit E2B docs (https://e2b.dev/docs) to learn how to create sandbox templates
-and start sandboxes.
+Visit E2B docs (https://e2b.dev/docs) to learn how to create sandbox templates and start sandboxes.
 
 Options:
-  -h, --help               display help for command
+  -V, --version             Display E2B CLI version
+  -h, --help                display help for command
 
 Commands:
-  build|bd [options] [id]  Build sandbox template defined by ./e2b.Dockerfile or
-                           ./Dockerfile in root directory. By default the root directory is the
-                           current working directory. This command also creates e2b.toml config
+  login                     Log in to CLI
 
-  list|ls                  List sandbox templates
+  logout                    Log out of CLI
 
-  shell|sh <id>            Connect terminal to sandbox
+  build|bd [options] [id]   Build sandbox template defined by `./e2b.Dockerfile` or `./Dockerfile` in root directory. By default the root directory is the current working directory. This command also creates `e2b.toml` config
 
-  init|it [options]        Create basic E2B ./e2b.Dockerfile in root directory. You can then run
-                           e2b build to build sandbox template from this Dockerfile
+  list|ls                   List sandbox templates
 
-  help [command]           display help for command
+  shell|sh [options] [id]   Connect terminal to sandbox
+
+  init|it [options]         Create basic E2B Dockerfile (`./e2b.Dockerfile`) in root directory. You can then run e2b build to build sandbox template from this Dockerfile
+
+  delete|dl [options] [id]  Delete sanbdox template and e2b.toml config
+
+  help [command]            display help for command
 ```

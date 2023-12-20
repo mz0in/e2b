@@ -45,7 +45,7 @@ export class Terminal {
   async kill(): Promise<void> {
     try {
       // TODO: Change the "destroy" to "kill" in devbookd
-      await this.sandbox.call(terminalService, 'destroy', [this.terminalID])
+      await this.sandbox._call(terminalService, 'destroy', [this.terminalID])
     } finally {
       this.triggerExit()
       await this.finished
@@ -65,7 +65,7 @@ export class Terminal {
    * @param data Data to send
    */
   async sendData(data: string): Promise<void> {
-    await this.sandbox.call(terminalService, 'data', [this.terminalID, data])
+    await this.sandbox._call(terminalService, 'data', [this.terminalID, data])
   }
 
   /**
@@ -75,7 +75,7 @@ export class Terminal {
    * @param rows Number of rows
    */
   async resize({ cols, rows }: { cols: number; rows: number }): Promise<void> {
-    await this.sandbox.call(terminalService, 'resize', [
+    await this.sandbox._call(terminalService, 'resize', [
       this.terminalID,
       cols,
       rows,
@@ -106,11 +106,14 @@ export type TerminalOpts = {
    */
   envVars?: EnvVars;
   /**
-   * Timeout in milliseconds (default is 60 seconds)
+   * Timeout for terminal start in milliseconds (default is 60 seconds)
    */
   timeout?: number;
 };
 
+/**
+ * Manager for starting and interacting with terminal sessions in the sandbox.
+ */
 export interface TerminalManager {
-  readonly start: (opts: TerminalOpts) => Promise<Terminal>;
+  start(opts: TerminalOpts): Promise<Terminal>;
 }

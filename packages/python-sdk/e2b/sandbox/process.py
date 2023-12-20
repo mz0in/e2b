@@ -1,4 +1,7 @@
 import logging
+import re
+import inspect
+
 from concurrent.futures import ThreadPoolExecutor
 from typing import (
     Any,
@@ -7,13 +10,18 @@ from typing import (
     Dict,
     List,
     Optional,
+    Union,
 )
-
 from pydantic import BaseModel
 
 from e2b.constants import TIMEOUT
 from e2b.sandbox.env_vars import EnvVars
-from e2b.sandbox.exception import MultipleExceptions, ProcessException, RpcException
+from e2b.sandbox.exception import (
+    MultipleExceptions,
+    ProcessException,
+    RpcException,
+    CurrentWorkingDirectoryDoesntExistException,
+)
 from e2b.sandbox.out import OutStderrResponse, OutStdoutResponse
 from e2b.sandbox.sandbox_connection import SandboxConnection
 from e2b.utils.future import DeferredFuture
@@ -157,11 +165,13 @@ class Process:
         """
         return self._process_id
 
-    def wait(self):
+    def wait(self, timeout: Optional[float] = None) -> ProcessOutput:
         """
         Wait for the process to exit.
+
+        :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out. If set to None, the method will continue to wait until it completes, regardless of time
         """
-        return self._finished.result()
+        return self._finished.result(timeout)
 
     def send_stdin(self, data: str, timeout: Optional[float] = TIMEOUT) -> None:
         """
@@ -207,7 +217,7 @@ class ProcessManager:
         sandbox: SandboxConnection,
         on_stdout: Optional[Callable[[ProcessMessage], Any]] = None,
         on_stderr: Optional[Callable[[ProcessMessage], Any]] = None,
-        on_exit: Optional[Callable[[int], Any]] = None,
+        on_exit: Optional[Union[Callable[[int], Any], Callable[[], Any]]] = None,
     ):
         self._sandbox = sandbox
         self._process_cleanup: List[Callable[[], Any]] = []
@@ -226,7 +236,7 @@ class ProcessManager:
         cmd: str,
         on_stdout: Optional[Callable[[ProcessMessage], Any]] = None,
         on_stderr: Optional[Callable[[ProcessMessage], Any]] = None,
-        on_exit: Optional[Callable[[int], Any]] = None,
+        on_exit: Optional[Union[Callable[[int], Any], Callable[[], Any]]] = None,
         env_vars: Optional[EnvVars] = None,
         cwd: str = "",
         rootdir: str = "",  # DEPRECATED
@@ -319,8 +329,13 @@ class ProcessManager:
             if unsub_all:
                 unsub_all()
             if on_exit:
+                sig = inspect.signature(on_exit)
+                params = sig.parameters.values()
                 try:
-                    on_exit(output.exit_code or 0)
+                    if len(params) == 0:
+                        on_exit()
+                    else:
+                        on_exit(output.exit_code or 0)
                 except TypeError as error:
                     logger.exception(f"Error in on_exit callback: {error}")
             future_exit_handler_finish(output)
@@ -366,8 +381,37 @@ class ProcessManager:
             )
         except RpcException as e:
             trigger_exit()
+            if re.match(
+                r"error starting process '\w+': fork/exec /bin/bash: no such file or directory",
+                e.message,
+            ):
+                raise CurrentWorkingDirectoryDoesntExistException(
+                    "Failed to start the process. You are trying set `cwd` to a directory that does not exist."
+                ) from e
             raise ProcessException(e.message) from e
         except TimeoutError as e:
             logger.error(f"Timeout error during starting the process: {cmd}")
             trigger_exit()
             raise e
+
+    def start_and_wait(
+        self,
+        cmd: str,
+        on_stdout: Optional[Callable[[ProcessMessage], Any]] = None,
+        on_stderr: Optional[Callable[[ProcessMessage], Any]] = None,
+        on_exit: Optional[Callable[[int], Any]] = None,
+        env_vars: Optional[EnvVars] = None,
+        cwd: str = "",
+        process_id: Optional[str] = None,
+        timeout: Optional[float] = TIMEOUT,
+    ) -> ProcessOutput:
+        return self.start(
+            cmd,
+            on_stdout=on_stdout,
+            on_stderr=on_stderr,
+            on_exit=on_exit,
+            env_vars=env_vars,
+            cwd=cwd,
+            process_id=process_id,
+            timeout=timeout,
+        ).wait()
